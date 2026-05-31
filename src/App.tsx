@@ -41,6 +41,24 @@ declare global {
 
 function parseVoiceCommand(text: string): { cmd: string; label: string } | null {
   const t = text.toLowerCase().trim();
+
+  // Angka kata → digit
+  const wordToNum: Record<string, string> = {
+    'satu': '1', 'dua': '2', 'tiga': '3', 'empat': '4',
+    'pertama': '1', 'kedua': '2', 'ketiga': '3', 'keempat': '4',
+  };
+  const normalize = (s: string) =>
+    s.replace(/\b(satu|dua|tiga|empat|pertama|kedua|ketiga|keempat)\b/g, m => wordToNum[m]);
+  const tn = normalize(t);
+
+  // Individual relay — cek dulu sebelum "semua"
+  for (const num of ['1', '2', '3', '4']) {
+    const onPattern  = new RegExp(`(nyalakan|hidupkan|aktifkan)\\s*(lampu|relay)\\s*${num}|lampu\\s*${num}\\s*(nyala|on)`);
+    const offPattern = new RegExp(`(matikan|padamkan|nonaktifkan)\\s*(lampu|relay)\\s*${num}|lampu\\s*${num}\\s*(mati|off)`);
+    if (onPattern.test(tn))  return { cmd: `r${num}_on`,  label: `Nyalakan Lampu ${num}` };
+    if (offPattern.test(tn)) return { cmd: `r${num}_off`, label: `Matikan Lampu ${num}` };
+  }
+
   if (t.includes('nyalakan lampu') || t.includes('hidupkan lampu') || t.includes('lampu nyala') || t.includes('semua nyala'))
     return { cmd: 'all_on', label: 'Nyalakan Semua Lampu' };
   if (t.includes('matikan lampu') || t.includes('lampu mati') || t.includes('semua mati') || t.includes('padamkan lampu'))
@@ -441,8 +459,8 @@ export default function App() {
               {/* Command hints */}
               <div className="mt-3 space-y-1.5">
                 {[
-                  '"Nyalakan lampu"',
-                  '"Matikan lampu"',
+                  '"Nyalakan lampu"  /  "Matikan lampu"',
+                  '"Nyalakan lampu 1"  /  "Matikan lampu 3"',
                   '"Berapa suhu / kelembapan"',
                   '"Nyalakan variasi 1 / 2"',
                 ].map((hint, i) => (
